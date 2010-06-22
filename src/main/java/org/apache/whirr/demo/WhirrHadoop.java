@@ -55,6 +55,7 @@ public class WhirrHadoop {
   private HadoopCluster cluster;
   
   public void startCluster() throws IOException {
+    // Service
     String secretKeyFile;
     try {
        secretKeyFile = System.getProperty("whirr.ssh.keyfile");
@@ -68,12 +69,14 @@ public class WhirrHadoop {
     serviceSpec.setSecretKeyFile(secretKeyFile);
     serviceSpec.setClusterName(clusterName);
     service = new HadoopService(serviceSpec);
-    
+
+    // Cluster
     ClusterSpec clusterSpec = new ClusterSpec(
 	new InstanceTemplate(1, HadoopService.MASTER_ROLE),
 	new InstanceTemplate(1, HadoopService.WORKER_ROLE));
-
     cluster = service.launchCluster(clusterSpec);
+
+    // Proxy
     proxy = new HadoopProxy(serviceSpec, cluster);
     proxy.start();
   }
@@ -136,12 +139,32 @@ public class WhirrHadoop {
 
   public static void main(String[] args) {
     WhirrHadoop wh = new WhirrHadoop();
-    System.out.println("Starting cluster...");
+
+    // Start the cluster
+    System.out.println("Starting the cluster.");
     try {
       wh.startCluster();
     } catch (IOException e) {
       System.err.println("Could not start cluster: " + e.getMessage());
     }
     System.out.println("Cluster started.");
+
+    // Run a job
+    System.out.println("Running MapReduce job.");
+    try {
+      wh.runJob();
+    } catch (Exception e) {
+      System.err.println("Could not run job: " + e.getMessage());
+    }
+    System.out.println("Finished MapReduce job.");
+
+    // Bring down the cluster
+    System.out.println("Bringing down the cluster.");
+    try {
+      wh.stopCluster();
+    } catch (IOException e) {
+      System.err.println("Could not bring down the cluster: " + e.getMessage());
+    }
+    System.out.println("Cluster stopped.");
   }
 }
